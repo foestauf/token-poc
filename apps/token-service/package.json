@@ -1,0 +1,35 @@
+{
+  "name": "@token-poc/token-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Token validation service - validates incoming projected tokens",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/main.ts",
+    "start": "node --require ./dist/tracing.js dist/main.js",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.0",
+    "@token-poc/token-utils": "workspace:*",
+    "fastify": "^5.3.3",
+    "fastify-plugin": "^5.0.1",
+    "pino": "^9.6.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.69.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.211.0",
+    "@opentelemetry/resources": "^2.2.0",
+    "@opentelemetry/sdk-node": "^0.211.0",
+    "@opentelemetry/semantic-conventions": "^1.38.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0"
+  }
+}

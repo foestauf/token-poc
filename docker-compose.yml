@@ -1,0 +1,42 @@
+services:
+  token-service:
+    build:
+      context: .
+      dockerfile: apps/token-service/Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      - PORT=3000
+      - TOKEN_AUDIENCE=token-service
+      - NODE_ENV=production
+
+  consumer-service:
+    build:
+      context: .
+      dockerfile: apps/consumer-service/Dockerfile
+    ports:
+      - "3002:3000"
+    environment:
+      - PORT=3000
+      - TOKEN_PATH=/var/run/secrets/tokens/token
+      - TOKEN_SERVICE_URL=http://token-service:3000
+      - NODE_ENV=production
+    volumes:
+      - ./dev/tokens:/var/run/secrets/tokens:ro
+    depends_on:
+      - token-service
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NEXT_PUBLIC_TOKEN_SERVICE_URL=http://localhost:3001
+      - NEXT_PUBLIC_CONSUMER_SERVICE_URL=http://localhost:3002
+      - NODE_ENV=production
+    depends_on:
+      - token-service
+      - consumer-service
