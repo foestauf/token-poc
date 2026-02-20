@@ -20,6 +20,7 @@ services:
       - PORT=3000
       - TOKEN_PATH=/var/run/secrets/tokens/token
       - TOKEN_SERVICE_URL=http://token-service:3000
+      - TOKEN_STRATEGY=direct
       - NODE_ENV=production
     volumes:
       - ./dev/tokens:/var/run/secrets/tokens:ro

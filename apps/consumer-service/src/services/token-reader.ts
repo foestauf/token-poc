@@ -1,10 +1,8 @@
-import { readProjectedToken, decodeJwt, isTokenExpired, getTokenTtlSeconds, TokenStatus } from '@token-poc/token-utils';
-
-const TOKEN_PATH = process.env.TOKEN_PATH || '/var/run/secrets/tokens/token';
+import { getTokenProvider, decodeJwt, isTokenExpired, getTokenTtlSeconds, TokenStatus } from '@token-poc/token-utils';
 
 export async function getTokenStatus(): Promise<TokenStatus> {
   try {
-    const token = await readProjectedToken(TOKEN_PATH);
+    const token = await getTokenProvider().getToken();
     const decoded = decodeJwt(token);
     const payload = decoded.payload;
 

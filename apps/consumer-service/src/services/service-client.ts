@@ -1,10 +1,9 @@
-import { readProjectedToken } from '@token-poc/token-utils';
+import { getTokenProvider } from '@token-poc/token-utils';
 
-const TOKEN_PATH = process.env.TOKEN_PATH || '/var/run/secrets/tokens/token';
 const TOKEN_SERVICE_URL = process.env.TOKEN_SERVICE_URL || 'http://localhost:3001';
 
 export async function callTokenService(endpoint: string): Promise<{ status: number; body: unknown }> {
-  const token = await readProjectedToken(TOKEN_PATH);
+  const token = await getTokenProvider().getToken();
 
   const url = `${TOKEN_SERVICE_URL}${endpoint}`;
   const response = await fetch(url, {
@@ -23,7 +22,7 @@ export async function callTokenService(endpoint: string): Promise<{ status: numb
 }
 
 export async function callTokenServicePost(endpoint: string, payload: unknown): Promise<{ status: number; body: unknown }> {
-  const token = await readProjectedToken(TOKEN_PATH);
+  const token = await getTokenProvider().getToken();
 
   const url = `${TOKEN_SERVICE_URL}${endpoint}`;
   const response = await fetch(url, {
