@@ -163,3 +163,45 @@ jobs:
             ghcr.io/${{ github.repository }}/dashboard:latest
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/dashboard:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/dashboard:buildcache,mode=max
+
+  deploy:
+    name: Deploy to ArgoCD
+    runs-on: ubuntu-latest
+    needs: [docker-token-service, docker-consumer-service, docker-dashboard]
+    if: github.event_name == 'push'
+    steps:
+      - name: Trigger homelab-infra update (token-service)
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.HOMELAB_DISPATCH_TOKEN }}
+          repository: foestauf/homelab-infra
+          event-type: update-image
+          client-payload: |
+            {
+              "app_name": "token-poc-token-service",
+              "image_tag": "sha-${{ github.sha }}"
+            }
+
+      - name: Trigger homelab-infra update (consumer-service)
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.HOMELAB_DISPATCH_TOKEN }}
+          repository: foestauf/homelab-infra
+          event-type: update-image
+          client-payload: |
+            {
+              "app_name": "token-poc-consumer-service",
+              "image_tag": "sha-${{ github.sha }}"
+            }
+
+      - name: Trigger homelab-infra update (dashboard)
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.HOMELAB_DISPATCH_TOKEN }}
+          repository: foestauf/homelab-infra
+          event-type: update-image
+          client-payload: |
+            {
+              "app_name": "token-poc-dashboard",
+              "image_tag": "sha-${{ github.sha }}"
+            }
