@@ -3,17 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { TokenRefreshEvent } from '@/lib/types';
 
-interface Props {
-  consumerUrl: string;
-}
-
-export function TokenRefreshLog({ consumerUrl }: Props) {
+export function TokenRefreshLog() {
   const [events, setEvents] = useState<TokenRefreshEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const es = new EventSource(`${consumerUrl}/api/token/watch`);
+    const es = new EventSource('/api/token/watch');
 
     es.onmessage = (event) => {
       try {
@@ -35,7 +31,7 @@ export function TokenRefreshLog({ consumerUrl }: Props) {
     return () => {
       es.close();
     };
-  }, [consumerUrl]);
+  }, []);
 
   useEffect(() => {
     if (logRef.current) {

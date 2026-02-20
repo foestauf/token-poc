@@ -7,8 +7,6 @@ import { AuthFlowDiagram } from '@/components/auth-flow-diagram';
 import { TokenRefreshLog } from '@/components/token-refresh-log';
 import { TokenStatus, CallResult } from '@/lib/types';
 
-const CONSUMER_SERVICE_URL = process.env.NEXT_PUBLIC_CONSUMER_SERVICE_URL || 'http://localhost:3002';
-
 export default function Home() {
   const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
   const [authResult, setAuthResult] = useState<CallResult | null>(null);
@@ -17,7 +15,7 @@ export default function Home() {
 
   const fetchTokenStatus = useCallback(async () => {
     try {
-      const res = await fetch(`${CONSUMER_SERVICE_URL}/api/token/status`);
+      const res = await fetch('/api/token/status');
       const data = await res.json();
       setTokenStatus(data);
     } catch (err) {
@@ -30,7 +28,7 @@ export default function Home() {
   const callProtected = useCallback(async () => {
     setCallLoading(true);
     try {
-      const res = await fetch(`${CONSUMER_SERVICE_URL}/api/call`, {
+      const res = await fetch('/api/call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ endpoint: '/api/protected/middleware-steps' }),
@@ -81,7 +79,7 @@ export default function Home() {
           onCallProtected={callProtected}
           loading={callLoading}
         />
-        <TokenRefreshLog consumerUrl={CONSUMER_SERVICE_URL} />
+        <TokenRefreshLog />
       </div>
     </main>
   );
