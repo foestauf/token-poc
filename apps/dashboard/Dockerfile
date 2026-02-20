@@ -25,6 +25,9 @@ COPY . .
 RUN pnpm --filter @token-poc/token-utils build
 RUN pnpm --filter @token-poc/dashboard build
 
+# Ensure public dir exists even if empty
+RUN mkdir -p /app/apps/dashboard/public
+
 # Stage 3: Production
 FROM node:24-alpine AS runner
 WORKDIR /app
