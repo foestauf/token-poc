@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { generateKeyPair, SignJWT, exportJWK } from 'jose';
 import http from 'node:http';
 import { JwksClient, isJwksEnabled, getJwksClient, _resetJwksClient } from './jwks-client.js';
