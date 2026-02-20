@@ -12,7 +12,7 @@ export default fp(async function tokenAuthPlugin(fastify: FastifyInstance) {
   const audience = process.env.TOKEN_AUDIENCE || 'token-service';
 
   fastify.decorate('authenticate', async function (request: FastifyRequest, reply: FastifyReply) {
-    const result = validateBearerToken(request.headers.authorization, audience);
+    const result = await validateBearerToken(request.headers.authorization, audience);
     request.authResult = result;
 
     if (!result.authenticated) {

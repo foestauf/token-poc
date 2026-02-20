@@ -1,11 +1,12 @@
 import { decodeJwt, isTokenExpired, hasAudience } from './decode-jwt.js';
 import { AuthResult, MiddlewareStep, ProjectedTokenPayload } from './token-types.js';
+import { getJwksClient, isJwksEnabled } from './jwks-client.js';
 
 function makeStep(step: string, status: MiddlewareStep['status'], detail: string): MiddlewareStep {
   return { step, status, detail, timestamp: Date.now() };
 }
 
-export function validateBearerToken(authHeader: string | undefined, expectedAudience?: string): AuthResult {
+export async function validateBearerToken(authHeader: string | undefined, expectedAudience?: string): Promise<AuthResult> {
   const steps: MiddlewareStep[] = [];
 
   // Step 1: Extract bearer token
@@ -39,14 +40,29 @@ export function validateBearerToken(authHeader: string | undefined, expectedAudi
     return { authenticated: false, steps, error: message };
   }
 
-  // Step 3: Check expiry
+  // Step 3: Verify signature (opt-in via JWKS env vars)
+  if (isJwksEnabled()) {
+    const client = getJwksClient();
+    try {
+      await client!.verifyToken(token);
+      steps.push(makeStep('verify_signature', 'pass', 'Signature verified via JWKS'));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Signature verification failed';
+      steps.push(makeStep('verify_signature', 'fail', message));
+      return { authenticated: false, steps, payload, error: 'Signature verification failed' };
+    }
+  } else {
+    steps.push(makeStep('verify_signature', 'skip', 'JWKS not configured'));
+  }
+
+  // Step 4: Check expiry
   if (isTokenExpired(payload)) {
     steps.push(makeStep('check_expiry', 'fail', `Token expired at ${new Date(payload.exp * 1000).toISOString()}`));
     return { authenticated: false, steps, payload, error: 'Token expired' };
   }
   steps.push(makeStep('check_expiry', 'pass', `Expires at ${new Date(payload.exp * 1000).toISOString()}`));
 
-  // Step 4: Check audience
+  // Step 5: Check audience
   if (expectedAudience) {
     if (!hasAudience(payload, expectedAudience)) {
       const actual = Array.isArray(payload.aud) ? payload.aud.join(', ') : payload.aud;

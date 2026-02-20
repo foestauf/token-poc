@@ -8,6 +8,9 @@ export type { TokenRefreshEvent } from './token-watcher.js';
 
 export { validateBearerToken } from './middleware.js';
 
+export { JwksClient, getJwksClient, isJwksEnabled } from './jwks-client.js';
+export type { JwksClientConfig } from './jwks-client.js';
+
 export type {
   ProjectedTokenPayload,
   TokenStatus,
