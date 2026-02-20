@@ -5,6 +5,7 @@ import { TokenInspector } from '@/components/token-inspector';
 import { ExpirationCountdown } from '@/components/expiration-countdown';
 import { AuthFlowDiagram } from '@/components/auth-flow-diagram';
 import { TokenRefreshLog } from '@/components/token-refresh-log';
+import { TokenStrategy } from '@/components/token-strategy';
 import { TokenStatus, CallResult } from '@/lib/types';
 
 export default function Home() {
@@ -80,6 +81,7 @@ export default function Home() {
           loading={callLoading}
         />
         <TokenRefreshLog />
+        <TokenStrategy />
       </div>
     </main>
   );
