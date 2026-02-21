@@ -6,6 +6,7 @@ import tokenWatchRoutes from './routes/token-watch.js';
 import callServiceRoutes from './routes/call-service.js';
 import tokenMetricsRoutes from './routes/token-metrics.js';
 import prometheusMetricsRoutes from './routes/prometheus-metrics.js';
+import tokenBenchmarkRoutes from './routes/token-benchmark.js';
 
 export async function buildApp() {
   const fastify = Fastify({
@@ -19,6 +20,7 @@ export async function buildApp() {
   await fastify.register(callServiceRoutes);
   await fastify.register(tokenMetricsRoutes);
   await fastify.register(prometheusMetricsRoutes);
+  await fastify.register(tokenBenchmarkRoutes);
 
   return fastify;
 }

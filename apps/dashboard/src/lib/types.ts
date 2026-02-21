@@ -51,3 +51,23 @@ export interface TokenRefreshEvent {
   tokenPath?: string;
   message?: string;
 }
+
+export interface BenchmarkStats {
+  strategy: string;
+  iterations: number;
+  timings: number[];
+  min: number;
+  max: number;
+  mean: number;
+  median: number;
+  p95: number;
+  p99: number;
+}
+
+export interface BenchmarkResponse {
+  direct: BenchmarkStats;
+  cached: BenchmarkStats;
+  iterations: number;
+  tokenPath: string;
+  timestamp: string;
+}
