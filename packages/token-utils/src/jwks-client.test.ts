@@ -134,7 +134,6 @@ describe('JwksClient.verifyToken', () => {
 
     const client = new JwksClient({
       jwksUri: `${server.url}/jwks`,
-      caCertPath: '/nonexistent', // no CA needed for HTTP
     });
 
     const payload = makeK8sPayload();
@@ -157,7 +156,6 @@ describe('JwksClient.verifyToken', () => {
 
     const client = new JwksClient({
       jwksUri: `${server.url}/jwks`,
-      caCertPath: '/nonexistent',
     });
 
     const payload = makeK8sPayload();
@@ -186,7 +184,6 @@ describe('JwksClient.verifyToken', () => {
 
     const client = new JwksClient({
       jwksUri: `http://127.0.0.1:${addr.port}/jwks`,
-      caCertPath: '/nonexistent',
       cooldownDuration: 60_000,
       cacheMaxAge: 60_000,
     });

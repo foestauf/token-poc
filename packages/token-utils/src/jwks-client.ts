@@ -1,15 +1,10 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyResult, type FlattenedJWSInput, type JWSHeaderParameters, type GetKeyFunction } from 'jose';
-import { readFileSync } from 'node:fs';
-import https from 'node:https';
-import http from 'node:http';
 
 export interface JwksClientConfig {
   /** Direct JWKS endpoint URL — skips OIDC discovery */
   jwksUri?: string;
   /** Issuer URL for OIDC discovery (used if jwksUri not set) */
   issuer?: string;
-  /** Path to CA cert for K8s API server TLS */
-  caCertPath?: string;
   /** JWKS cache max age in ms (default 600000 = 10 min) */
   cacheMaxAge?: number;
   /** Min time between JWKS refetches in ms (default 30000 = 30 sec) */
@@ -27,7 +22,6 @@ export class JwksClient {
     this.config = {
       jwksUri: config.jwksUri,
       issuer: config.issuer,
-      caCertPath: config.caCertPath ?? '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
       cacheMaxAge: config.cacheMaxAge ?? 600_000,
       cooldownDuration: config.cooldownDuration ?? 30_000,
     };
@@ -75,12 +69,8 @@ export class JwksClient {
 
   private async refresh(): Promise<void> {
     const jwksUri = await this.resolveJwksUri();
-    const agent = this.createAgent(jwksUri);
 
-    this.keyResolver = createRemoteJWKSet(new URL(jwksUri), {
-      [Symbol.for('custom-agent')]: agent,
-      headers: agent ? { 'User-Agent': 'token-poc-jwks-client' } : undefined,
-    } as Parameters<typeof createRemoteJWKSet>[1]);
+    this.keyResolver = createRemoteJWKSet(new URL(jwksUri));
 
     this.resolvedJwksUri = jwksUri;
     this.lastFetchTime = Date.now();
@@ -100,62 +90,18 @@ export class JwksClient {
     }
 
     const discoveryUrl = `${this.config.issuer.replace(/\/$/, '')}/.well-known/openid-configuration`;
-    const discovery = await this.fetchJson(discoveryUrl);
+    const res = await fetch(discoveryUrl);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} from ${discoveryUrl}`);
+    }
+
+    const discovery = await res.json() as Record<string, unknown>;
 
     if (!discovery.jwks_uri) {
       throw new Error(`OIDC discovery response missing jwks_uri from ${discoveryUrl}`);
     }
 
     return discovery.jwks_uri as string;
-  }
-
-  private fetchJson(url: string): Promise<Record<string, unknown>> {
-    return new Promise((resolve, reject) => {
-      const parsedUrl = new URL(url);
-      const transport = parsedUrl.protocol === 'https:' ? https : http;
-      const agent = this.createAgent(url);
-
-      const options: https.RequestOptions = {
-        hostname: parsedUrl.hostname,
-        port: parsedUrl.port,
-        path: parsedUrl.pathname + parsedUrl.search,
-        method: 'GET',
-        headers: { 'Accept': 'application/json', 'User-Agent': 'token-poc-jwks-client' },
-        ...(agent ? { agent } : {}),
-      };
-
-      const req = transport.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
-        res.on('end', () => {
-          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-            try {
-              resolve(JSON.parse(data));
-            } catch {
-              reject(new Error(`Invalid JSON from ${url}`));
-            }
-          } else {
-            reject(new Error(`HTTP ${res.statusCode} from ${url}`));
-          }
-        });
-      });
-
-      req.on('error', reject);
-      req.end();
-    });
-  }
-
-  private createAgent(url: string): https.Agent | undefined {
-    const parsedUrl = new URL(url);
-    if (parsedUrl.protocol !== 'https:') return undefined;
-
-    try {
-      const ca = readFileSync(this.config.caCertPath, 'utf-8');
-      return new https.Agent({ ca });
-    } catch {
-      // No CA cert available — use default TLS
-      return undefined;
-    }
   }
 }
 
@@ -174,7 +120,6 @@ export function getJwksClient(): JwksClient | null {
     singleton = new JwksClient({
       jwksUri: process.env.JWKS_URI,
       issuer: process.env.TOKEN_ISSUER,
-      caCertPath: process.env.K8S_CA_CERT_PATH,
       cacheMaxAge: process.env.JWKS_CACHE_MAX_AGE ? Number(process.env.JWKS_CACHE_MAX_AGE) : undefined,
       cooldownDuration: process.env.JWKS_COOLDOWN_DURATION ? Number(process.env.JWKS_COOLDOWN_DURATION) : undefined,
     });
