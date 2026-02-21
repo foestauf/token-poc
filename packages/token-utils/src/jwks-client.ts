@@ -1,4 +1,7 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyResult, type FlattenedJWSInput, type JWSHeaderParameters, type GetKeyFunction } from 'jose';
+import { readFileSync } from 'node:fs';
+
+const K8S_SA_TOKEN_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/token';
 
 export interface JwksClientConfig {
   /** Direct JWKS endpoint URL — skips OIDC discovery */
@@ -67,10 +70,22 @@ export class JwksClient {
     return this.keyResolver!;
   }
 
+  private getK8sAuthHeaders(): Record<string, string> | undefined {
+    try {
+      const token = readFileSync(K8S_SA_TOKEN_PATH, 'utf-8').trim();
+      return { Authorization: `Bearer ${token}` };
+    } catch {
+      return undefined;
+    }
+  }
+
   private async refresh(): Promise<void> {
     const jwksUri = await this.resolveJwksUri();
+    const headers = this.getK8sAuthHeaders();
 
-    this.keyResolver = createRemoteJWKSet(new URL(jwksUri));
+    this.keyResolver = createRemoteJWKSet(new URL(jwksUri), {
+      headers,
+    });
 
     this.resolvedJwksUri = jwksUri;
     this.lastFetchTime = Date.now();
@@ -90,7 +105,8 @@ export class JwksClient {
     }
 
     const discoveryUrl = `${this.config.issuer.replace(/\/$/, '')}/.well-known/openid-configuration`;
-    const res = await fetch(discoveryUrl);
+    const headers = this.getK8sAuthHeaders();
+    const res = await fetch(discoveryUrl, { headers });
     if (!res.ok) {
       throw new Error(`HTTP ${res.status} from ${discoveryUrl}`);
     }
